@@ -27,7 +27,7 @@ minter::frame_io::frame_io(minter::hidpp_device &&dev) :
 
 }
 
-size_t minter::frame_io::read(bytes_data &out) {
+size_t minter::frame_io::read(tb::bytes_data &out) {
     size_t n = 0;
     n = io().read(m_buffer, 64);
     ML_LOG("Read data [{0}:{1}] {2}", m_seq, 64, dumpHexRet(m_buffer));
@@ -66,14 +66,13 @@ size_t minter::frame_io::read(bytes_data &out) {
 }
 size_t minter::frame_io::write(const minter::APDU &apdu) {
     auto apduData = apdu.to_bytes();
-
-    bytes_data chunk(64);
+    tb::bytes_data chunk(64);
     chunk.write(0, 0x0101_dbyte);
     chunk.write(2, 0x05_byte);
 
     auto dataLen = (uint16_t) (apduData.size() & 0xFFFF_dbyte);
 
-    bytes_buffer buffer(apduData.size() + 2);
+    tb::bytes_buffer buffer(apduData.size() + 2);
     // write 2 bytes data length prefix
     buffer.write(0, dataLen);
     // write APDU data

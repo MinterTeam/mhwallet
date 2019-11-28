@@ -18,7 +18,7 @@
 
 namespace minter {
 
-class hidpp {
+class MINTER_MH_API hidpp {
  public:
     hidpp();
     ~hidpp();

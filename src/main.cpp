@@ -25,6 +25,7 @@ typedef void(*action_options_func_t)(boost::program_options::options_description
 static void action_get_address_opts(boost::program_options::options_description &options) {
     options.add_options()
                ("index,i", po::value<uint32_t>()->default_value(0), "BIP32 derivation index")
+               ("silent,s", "Don't show comparison text, just return address")
                ("inline", "Print result inline without newlines etc");
 }
 static int action_get_address(const boost::program_options::variables_map &options) {
@@ -35,8 +36,8 @@ static int action_get_address(const boost::program_options::variables_map &optio
 
     uint32_t derivationIndex = options.at("index").as<uint32_t>();
     bool printInline = options.count("inline");
-
-    auto address = device.get_address(derivationIndex);
+    bool silent = options.count("silent");
+    auto address = device.get_address(derivationIndex, silent);
 
     if (printInline) {
         std::cout << address.to_string();
@@ -78,19 +79,21 @@ static void action_sign_tx_opts(boost::program_options::options_description &opt
                ("inline", "Print result inline without newlines etc");
 }
 static int action_sign_tx(const boost::program_options::variables_map &options) {
-    //    std::string txHash = "067ea2037c3f14e7fb1affaec93940bc5af500144f13274e131c9ae78cbbd4e1";
+    //    std::string txHash = "067ea2037c3f14e7fb1affaec93940bc5af500144f13274e131c9ae78cbbd4e1"; // this has recovery 0x1c
+    //    std::string txHash = "1ee24f115b579f0f1ba7278515f8c438c2da201dc37fa44c2d9f431d94a9693e"; // this has recovery 0x1b
+    //    std::string txHash = "18b91c804a8aba5e5d1f4acd83b60b74925afda8ce06b26e03575ad2f89f4bef"; // this has overflow in R component and leading zero
     minter::nanos_wallet device;
     if (!device.init()) {
         return 1;
     }
 
-    bytes_data txHash = options.at("hash").as<std::string>();
+    tb::bytes_data txHash = options.at("hash").as<std::string>();
     uint32_t derivationIndex = options.at("index").as<uint32_t>();
     bool printInline = options.count("inline");
 
     auto sign = device.sign_tx(txHash, derivationIndex);
 
-    bytes_data outInline(65);
+    tb::bytes_data outInline(65);
     outInline.write(0, sign.r);
     outInline.write(32, sign.s);
     outInline.write(64, sign.v);
@@ -121,7 +124,7 @@ const static std::unordered_map<std::string, action_options_func_t> opts_map = {
 };
 
 int main(int argc, char **argv) {
-    std::string actions_desc = R"(Minter Ledger Wallet Client
+    std::string actions_desc = R"(Minter Ledger Wallet CLI
 
 Usage:
  Command list:
@@ -148,7 +151,7 @@ Options)";
           return true;
       }
 
-      HIDPP_VERBOSE = vm.count("verbose");
+      HIDPP_VERBOSE = true;
 
       try {
           po::notify(vm);
@@ -163,9 +166,9 @@ Options)";
     };
 
     if (argc == 1) {
-        handleArgs();
+        const auto ret = handleArgs();
         std::cout << desc << std::endl;
-        return 0;
+        return ret ? 0 : 1;
     }
 
     if (argc >= 2) {
@@ -178,14 +181,21 @@ Options)";
         }
 
         opts_map.at(cmdName)(desc);
-        if(!handleArgs()) {
+        if (!handleArgs()) {
             return 1;
         }
         if (vm.count("help")) {
             std::cout << desc << "\n";
             return 0;
         }
-        return action_map.at(cmdName)(vm);
+
+        try {
+            return action_map.at(cmdName)(vm);
+        } catch (const std::exception &e) {
+            ML_ERR(e.what());
+            return 1;
+        }
+
     }
 
     if (vm.count("help")) {

@@ -24,8 +24,8 @@ minter::frame_io_apdu::frame_io_apdu(minter::hidpp_device &&dev) :
 
 }
 
-bytes_data minter::frame_io_apdu::exchange(const minter::APDU &apdu, uint16_t *statusCode) {
-    if (apdu.payload_size > 0xFF) {
+tb::bytes_data minter::frame_io_apdu::exchange(const minter::APDU &apdu, uint16_t *statusCode) {
+    if (apdu.payload_size > 0xFF_byte) {
         throw std::runtime_error("payload size can't be more than 255");
     }
 
@@ -34,21 +34,22 @@ bytes_data minter::frame_io_apdu::exchange(const minter::APDU &apdu, uint16_t *s
     n = write(apdu);
     ML_LOG("Write APDU frame ({0}) bytes", n);
 
-    bytes_data buffer(255);
+    tb::bytes_data buffer(255);
     rn += read(buffer) + 5;
 
     ML_LOG("Read APDU frame (2 bytes)");
 
     // read APDU payload
-    auto respLen = buffer.to_num<uint16_t>(0) + 2;
+    uint16_t respLen = buffer.to_num<uint16_t>(0) + 2;
     ML_LOG("Response length (raw): {0}", respLen);
 
+    // this hell for make compiler happy, as we comparing size_t and
     while (rn < respLen) {
         rn += read(buffer) + 5;
     }
 
-    bytes_data resp;
-    bytes_data respCode(2);
+    tb::bytes_data resp;
+    tb::bytes_data respCode(2);
 
     if (statusCode) {
         *statusCode = CODE_NO_STATUS_RESULT;

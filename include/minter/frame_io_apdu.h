@@ -15,14 +15,14 @@
 
 namespace minter {
 
-class frame_io_apdu : public minter::frame_io {
+class MINTER_MH_API frame_io_apdu : public minter::frame_io {
  public:
     frame_io_apdu(const hidpp_device &dev);
     frame_io_apdu(hidpp_device &&dev);
-    bytes_data exchange(const APDU &apdu, uint16_t *statusCode = nullptr);
+    tb::bytes_data exchange(const APDU &apdu, uint16_t *statusCode = nullptr);
 
  private:
-    bytes_data buf;
+    tb::bytes_data buf;
     size_t rn;
 };
 

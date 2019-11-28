@@ -14,21 +14,21 @@
 
 namespace minter {
 
-class frame_io {
+class MINTER_MH_API frame_io {
  public:
     frame_io(const hidpp_device &dev);
     frame_io(hidpp_device &&dev);
 
-    size_t read(bytes_data &out);
+    size_t read(tb::bytes_data &out);
     size_t write(const APDU &apdu);
     void reset();
-    hidpp_device& io();
+    hidpp_device &io();
 
  protected:
     hidpp_device m_io;
     uint16_t m_seq = 0;
     size_t m_offset = 0;
-    bytes_buffer m_buffer;
+    tb::bytes_buffer m_buffer;
 };
 
 } // minter

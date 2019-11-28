@@ -9,12 +9,12 @@
 #ifndef MHWALLET_HIDPP_DEVICE_INFO_H
 #define MHWALLET_HIDPP_DEVICE_INFO_H
 
-#include <hidapi.h>
+#include <minter/hid/hidapi.h>
 #include "hidpp_base.h"
 
 namespace minter {
 
-class hidpp_device_info {
+class MINTER_MH_API hidpp_device_info {
  public:
     hidpp_device_info(hid_device_info *ptr);
     const dev_info_t &get() const;

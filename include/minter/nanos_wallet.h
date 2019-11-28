@@ -43,15 +43,15 @@ static std::string statusToString(uint16_t status) {
     }
 }
 
-class nanos_wallet {
+class MINTER_MH_API nanos_wallet {
  public:
     nanos_wallet();
 
     bool init();
-    bytes_data exchange(const minter::APDU &apdu, uint16_t *resCode = nullptr);
+    tb::bytes_data exchange(const minter::APDU &apdu, uint16_t *resCode = nullptr);
 
-    minter::address_t get_address(uint32_t deriveIndex = 0);
-    minter::signature sign_tx(bytes_data txHash, uint32_t deriveIndex = 0);
+    minter::address_t get_address(uint32_t deriveIndex = 0, bool silent = false);
+    minter::signature sign_tx(tb::bytes_data txHash, uint32_t deriveIndex = 0);
     std::string get_app_version();
 
  private:

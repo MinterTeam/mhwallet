@@ -18,7 +18,7 @@
 
 namespace minter {
 
-class hidpp_device {
+class MINTER_MH_API hidpp_device {
  public:
     hidpp_device(const hidpp_device_info &info);
     hidpp_device(uint16_t vendorId, uint16_t productId);
@@ -27,18 +27,18 @@ class hidpp_device {
     bool valid() const;
     bool open();
     void close() {
-        if(m_dev)
+        if (m_dev)
             hid_close(m_dev);
     }
 
     std::string getError() const;
-    [[nodiscard]] const hid_device* cget() const;
-    [[nodiscard]] hid_device* get();
+    [[nodiscard]] const hid_device *cget() const;
+    [[nodiscard]] hid_device *get();
 
     size_t write(const uint8_t *data, size_t len) const;
-    size_t write(const bytes_data &data) const;
-    size_t read(bytes_data &out, size_t readLen) const;
-    size_t read_back(bytes_data &out, size_t seq, size_t readLen) const;
+    size_t write(const tb::bytes_data &data) const;
+    size_t read(tb::bytes_data &out, size_t readLen) const;
+    size_t read_back(tb::bytes_data &out, size_t seq, size_t readLen) const;
     size_t read(uint8_t *out, size_t readLen) const;
 
  private:

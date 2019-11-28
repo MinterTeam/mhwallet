@@ -20,11 +20,9 @@ bool minter::nanos_wallet::init() {
     // check device is exists in system
     auto devs = m_hid.enumerate_devices(LEDGER_VID, NANOS_PID);
     if (devs.empty()) {
-        ML_ERR("Please, connect your Nano S to computer");
-        return false;
+        throw std::runtime_error("Please, connect your Nano S to computer");
     } else if (devs.size() > 1) {
-        ML_ERR("Did you opened Minter wallet?");
-        return false;
+        throw std::runtime_error("Did you opened Minter wallet?");
     }
 
     auto dev_info = devs.begin();
@@ -40,38 +38,37 @@ bool minter::nanos_wallet::init() {
     return true;
 }
 
-
-bytes_data minter::nanos_wallet::exchange(const minter::APDU &apdu, uint16_t *resCode) {
+tb::bytes_data minter::nanos_wallet::exchange(const minter::APDU &apdu, uint16_t *resCode) {
     // only 1 thread can use device at time
     std::unique_lock<std::mutex> lock(m_devLock);
 
-    if(!m_valid) {
+    if (!m_valid) {
         throw std::runtime_error("trying to send data to uninitialized device");
     }
 
-    bytes_data out;
+    tb::bytes_data out;
     try {
         out = m_framer.exchange(apdu, resCode);
-    } catch(const std::out_of_range &e) {
+    } catch (const std::out_of_range &e) {
         ML_ERR("Invalid response length: {0}", e.what());
-        return bytes_data();
+        return out;
     }
 
     return out;
 }
 
-minter::address_t minter::nanos_wallet::get_address(uint32_t deriveIndex) {
+minter::address_t minter::nanos_wallet::get_address(uint32_t deriveIndex, bool silent) {
     minter::APDU data = {
         DEVICE_CLASS,
         CMD_GET_ADDRESS,
-        0,
+        silent ? 0x01_byte : 0x00_byte,
         0,
         4,
         {0, 0, 0, 0}
     };
 
     std::vector<uint8_t> tmp(4);
-    numToBytes<uint32_t>(deriveIndex, tmp);
+    tb::numToBytes<uint32_t>(deriveIndex, tmp);
     memmove(data.payload, tmp.data(), 4);
     tmp.clear();
 
@@ -85,8 +82,8 @@ minter::address_t minter::nanos_wallet::get_address(uint32_t deriveIndex) {
     return minter::address_t(response.take_range(0, 20));
 }
 
-minter::signature minter::nanos_wallet::sign_tx(bytes_data txHash, uint32_t deriveIndex) {
-    bytes_data unsignedHash(36);
+minter::signature minter::nanos_wallet::sign_tx(tb::bytes_data txHash, uint32_t deriveIndex) {
+    tb::bytes_data unsignedHash(36);
     unsignedHash.write(0, (uint32_t) deriveIndex);
     unsignedHash.write(4, txHash);
     minter::APDU data = {
