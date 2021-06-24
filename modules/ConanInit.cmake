@@ -32,6 +32,7 @@ macro (conan_init)
 		CONANFILE conanfile.py
 		BUILD missing
 		BASIC_SETUP
+		OPTIONS "${CONAN_OPTS}"
 	)
 
 	if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)

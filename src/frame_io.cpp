@@ -7,31 +7,34 @@
  * \link   https://github.com/edwardstock
  */
 
-#include <utility>
 #include "minter/frame_io.h"
 
-minter::frame_io::frame_io(const minter::hidpp_device &dev) :
-    m_io(dev),
-    m_seq(0),
-    m_offset(0),
-    m_buffer(64) {
+#include "minter/errors.h"
 
+#include <toolbox/data/literals.h>
+#include <utility>
+
+minter::frame_io::frame_io(const minter::hidpp_device& dev)
+    : m_io(dev),
+      m_seq(0),
+      m_offset(0),
+      m_buffer(64) {
 }
 
-minter::frame_io::frame_io(minter::hidpp_device &&dev) :
-    m_io(std::move(dev)),
-    m_seq(0),
-    m_offset(0),
-    m_buffer(64)
-    {
-
+minter::frame_io::frame_io(minter::hidpp_device&& dev)
+    : m_io(std::move(dev)),
+      m_seq(0),
+      m_offset(0),
+      m_buffer(64) {
 }
 
-size_t minter::frame_io::read(tb::bytes_data &out) {
+#include <chrono>
+#include <thread>
+
+size_t minter::frame_io::read(tb::bytes_data& out) {
     size_t n = 0;
     n = io().read(m_buffer, 64);
     ML_LOG("Read data [{0}:{1}] {2}", m_seq, 64, dumpHexRet(m_buffer));
-
     if (n != 64) {
         return 0;
     }
@@ -49,7 +52,7 @@ size_t minter::frame_io::read(tb::bytes_data &out) {
     } else if (commandTag != 0x05) {
         throw std::runtime_error(fmt::format("bad command tag 0x{0:2X}", commandTag));
     } else if (cseq != this->m_seq) {
-        throw std::runtime_error(fmt::format("bad sequence number {0} (expected {1})", cseq, m_seq));
+        throw minter::wrong_seqno_error(m_seq, cseq);
     }
 
     if (m_seq == 0) {
@@ -64,13 +67,13 @@ size_t minter::frame_io::read(tb::bytes_data &out) {
     m_offset += 64;
     return n;
 }
-size_t minter::frame_io::write(const minter::APDU &apdu) {
+size_t minter::frame_io::write(const minter::APDU& apdu) {
     auto apduData = apdu.to_bytes();
     tb::bytes_data chunk(64);
-    chunk.write(0, 0x0101_dbyte);
-    chunk.write(2, 0x05_byte);
+    chunk.write(0, (uint16_t) 0x0101);
+    chunk.write(2, (uint8_t) 0x05);
 
-    auto dataLen = (uint16_t) (apduData.size() & 0xFFFF_dbyte);
+    auto dataLen = (uint16_t) (apduData.size() & (uint16_t) 0xFFFF);
 
     tb::bytes_buffer buffer(apduData.size() + 2);
     // write 2 bytes data length prefix
@@ -81,7 +84,7 @@ size_t minter::frame_io::write(const minter::APDU &apdu) {
     uint16_t cseq = 0;
 
     while (!buffer.empty()) {
-        chunk.write(3, cseq); //2 bytes
+        chunk.write(3, cseq); // 2 bytes
         size_t n = buffer.pop_front_to(5, chunk);
 
         ML_LOG("Write data [{0}:{1}] {2}", cseq, chunk.size(), dumpHexRet(chunk));
@@ -91,7 +94,8 @@ size_t minter::frame_io::write(const minter::APDU &apdu) {
 
         cseq++;
 
-        io().write(toUsb);
+        auto written = io().write(toUsb);
+        ML_LOG("Write data [{0}:{1}] written {2} bytes", cseq, chunk.size(), written);
     }
 
     return apduData.size();
@@ -100,6 +104,6 @@ void minter::frame_io::reset() {
     m_seq = 0;
 }
 
-minter::hidpp_device &minter::frame_io::io() {
+minter::hidpp_device& minter::frame_io::io() {
     return m_io;
 }

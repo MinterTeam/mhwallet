@@ -15,20 +15,24 @@
 
 #ifdef MINTER_EXPORT_SHARED
 #ifdef MINTER_MH_EXPORTING
-#   if _MSC_VER
-#       define MINTER_MH_API __declspec(dllexport)
-#   else
-#       define MINTER_MH_API __attribute__((visibility("default")))
-#   endif
+#if _MSC_VER
+#define MINTER_MH_API __declspec(dllexport)
 #else
-#   if _MSC_VER
-#       define MINTER_MH_API __declspec(dllimport)
-#   else
-#       define MINTER_MH_API
-#   endif
+#define MINTER_MH_API __attribute__((visibility("default")))
+#endif
+#else
+#if _MSC_VER
+#define MINTER_MH_API __declspec(dllimport)
+#else
+#define MINTER_MH_API
+#endif
 #endif
 #else
 #define MINTER_MH_API
-#endif  // MINTER_EXPORT_SHARED
+#endif // MINTER_EXPORT_SHARED
 
-#endif //MINTER_MHWALLET_CORE_H
+#if defined(_MSC_VER) && !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+
+#endif // MINTER_MHWALLET_CORE_H

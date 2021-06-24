@@ -2,14 +2,20 @@
 // Created by edward on 13.11.2019.
 //
 
-#include "minter/hidpp.h"
 #include "minter/hidpp_base.h"
+
+#include "minter/hidpp.h"
 #include "minter/hidpp_device_info.h"
 
+#include <iostream>
+#include <thread>
+
 minter::hidpp::hidpp() {
+    std::cout << "HidDev: init in thread " << std::this_thread::get_id() << std::endl;
     hid_init();
 }
 minter::hidpp::~hidpp() {
+    std::cout << "HidDev: destruct in thread " << std::this_thread::get_id() << std::endl;
     hid_exit();
 }
 

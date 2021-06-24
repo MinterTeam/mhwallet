@@ -25,25 +25,29 @@ minter::frame_io_apdu::frame_io_apdu(minter::hidpp_device &&dev) :
 }
 
 tb::bytes_data minter::frame_io_apdu::exchange(const minter::APDU &apdu, uint16_t *statusCode) {
-    if (apdu.payload_size > 0xFF_byte) {
+    if (apdu.payload_size > (uint8_t) 0xFF) {
         throw std::runtime_error("payload size can't be more than 255");
     }
 
     size_t n = 0;
+    // reset chunks counter
     reset();
+    // IO write
     n = write(apdu);
     ML_LOG("Write APDU frame ({0}) bytes", n);
 
+    // prepare response buffer
     tb::bytes_data buffer(255);
+    // read maximum 255 bytes, returned bytes is a number of user data, without prefix, so adding 5 to this
     rn += read(buffer) + 5;
 
     ML_LOG("Read APDU frame (2 bytes)");
 
-    // read APDU payload
+    // read length of full response data, not for this chunk
     uint16_t respLen = buffer.to_num<uint16_t>(0) + 2;
     ML_LOG("Response length (raw): {0}", respLen);
 
-    // this hell for make compiler happy, as we comparing size_t and
+    // until we didn't get whole data, read again, buffer will be expanded from 255 to readLen + some additional bytes
     while (rn < respLen) {
         rn += read(buffer) + 5;
     }
@@ -59,13 +63,18 @@ tb::bytes_data minter::frame_io_apdu::exchange(const minter::APDU &apdu, uint16_
         // [ 2 bytes - length prefix; N bytes - data; 2 bytes - status code]
         resp = buffer.take_range(2, respLen - 2);
         respCode = buffer.take_range(respLen - 2, respLen);
+
         if (statusCode) {
             *statusCode = respCode.to_num<uint16_t>();
         }
     }
 
     ML_LOG("Response data ({0} bytes): {1}", resp.size(), dumpHexRet(resp));
+    // cleanup state
+    m_seq = 0;
+    m_offset = 0;
+    rn = 0;
+    buf.clear();
 
     return resp;
 }
-

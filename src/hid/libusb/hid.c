@@ -43,7 +43,7 @@
 #include <pthread.h>
 #include <wchar.h>
 
-/* GNU / LibUSB */
+/* GNU / LibUsb */
 #include <libusb.h>
 #ifndef __ANDROID__
 #include <iconv.h>

@@ -657,46 +657,46 @@ HID_API_CALL hid_write(hid_device *dev, const unsigned char *data, size_t length
        create a temporary buffer which is the proper size. */
     if (length >= dev->output_report_length) {
         /* The user passed the right number of bytes. Use the buffer as-is. */
-        buf = (unsigned char *) data;
+        buf = (unsigned char*) data;
     } else {
         /* Create a temporary buffer and copy the user's data
            into it, padding the rest with zeros. */
-        buf = (unsigned char *) malloc(dev->output_report_length);
+        buf = (unsigned char*) malloc(dev->output_report_length);
         memcpy(buf, data, length);
         memset(buf + length, 0, dev->output_report_length - length);
         length = dev->output_report_length;
     }
 
-    fprintf(stdout,
-            "Writing data to HID: buf[0]=0x%02x, buf[len-1]=0x%02x, buflen=%llu\n",
-            buf[0],
-            buf[length - 1],
-            length);
+    //    fprintf(stdout,
+    //            "Writing data to HID: buf[0]=0x%02x, buf[len-1]=0x%02x, buflen=%llu\n",
+    //            buf[0],
+    //            buf[length - 1],
+    //            length);
 
-    fprintf(stdout, "Write buffer:%s\n", dumpHex(buf, length));
+    //    fprintf(stdout, "Write buffer:%s\n", dumpHex(buf, length));
     res = WriteFile(dev->device_handle, buf, length, NULL, &s_overlapped);
 
     if (!res) {
 
         if (GetLastError() != ERROR_IO_PENDING) {
-            fprintf(stderr, "Error writing: last error: %lu (0x%lx)\n", GetLastError(), GetLastError());
+            //            fprintf(stderr, "Error writing: last error: %lu (0x%lx)\n", GetLastError(), GetLastError());
             /* WriteFile() failed. Return error. */
             register_error(dev, "WriteFile");
             bytes_written = -1;
             goto end_of_function;
         } else {
-            fprintf(stdout, "Pending write...\n");
+            //            fprintf(stdout, "Pending write...\n");
         }
     }
 
     /* Wait here until the write is done. This makes
        hid_write() synchronous. */
-    fprintf(stdout, "Start getting overlapped result (wait=TRUE)\n");
+    //    fprintf(stdout, "Start getting overlapped result (wait=TRUE)\n");
     res = GetOverlappedResult(dev->device_handle, &s_overlapped, &bytes_written, TRUE/*wait*/);
-    fprintf(stdout, "Overlapped write result: bytes_written=%lu\n", bytes_written);
+    //    fprintf(stdout, "Overlapped write result: bytes_written=%lu\n", bytes_written);
 
     if (!res) {
-        fprintf(stderr, "Error getting result: last error: %lu (0x%lx)\n", GetLastError(), GetLastError());
+        //        fprintf(stderr, "Error getting result: last error: %lu (0x%lx)\n", GetLastError(), GetLastError());
         /* The Write operation failed. */
         register_error(dev, "WriteFile");
         bytes_written = -1;
@@ -724,7 +724,7 @@ HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t lengt
         dev->read_pending = TRUE;
         memset(dev->read_buf, 0, dev->input_report_length);
         ResetEvent(ev);
-        fprintf(stdout, "Read buffer:%s\n", dumpHex(dev->read_buf, dev->input_report_length));
+        //        fprintf(stdout, "Read buffer:%s\n", dumpHex(dev->read_buf, dev->input_report_length));
         res = ReadFile(dev->device_handle, dev->read_buf, dev->input_report_length, &bytes_read, &dev->ol);
 
         if (!res) {
@@ -735,17 +735,17 @@ HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t lengt
                 dev->read_pending = FALSE;
                 goto end_of_function;
             } else {
-                fprintf(stdout, "Pending read request...\n");
+                //                fprintf(stdout, "Pending read request...\n");
             }
         }
     }
 
     if (milliseconds >= 0) {
-        fprintf(stdout, "Waiting for response...\n");
+        //        fprintf(stdout, "Waiting for response...\n");
         /* See if there is any data yet. */
         res = WaitForSingleObject(ev, milliseconds);
         if (res != WAIT_OBJECT_0) {
-            fprintf(stderr, "Wait done. Not a WAIT_OBJECT_0\n");
+            //            fprintf(stderr, "Wait done. Not a WAIT_OBJECT_0\n");
             /* There was no data this time. Return zero bytes available,
                but leave the Overlapped I/O running. */
             return 0;
@@ -756,9 +756,9 @@ HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t lengt
        we are in non-blocking mode. Get the number of bytes read. The actual
        data has been copied to the data[] array which was passed to ReadFile(). */
     res = GetOverlappedResult(dev->device_handle, &dev->ol, &bytes_read, TRUE/*wait*/);
-    fprintf(stdout, "Overlapped result: %s, bytes_read: %lu\n", res ? "true" : "false", bytes_read);
+    // fprintf(stdout, "Overlapped result: %s, bytes_read: %lu\n", res ? "true" : "false", bytes_read);
 
-    fprintf(stdout, "Read buffer:%s\n", dumpHex(dev->read_buf, dev->input_report_length));
+    // fprintf(stdout, "Read buffer:%s\n", dumpHex(dev->read_buf, dev->input_report_length));
     /* Set pending back to false, even if GetOverlappedResult() returned error. */
     dev->read_pending = FALSE;
 
@@ -777,7 +777,8 @@ HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t lengt
         /* Copy the whole buffer, report number and all. */
         copy_len = length > bytes_read ? bytes_read : length;
         memcpy(data, dev->read_buf, copy_len);
-//        }
+        memset(dev->read_buf, 0, bytes_read);
+        //        }
     }
 
     end_of_function:
