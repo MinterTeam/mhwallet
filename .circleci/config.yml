@@ -12,6 +12,8 @@ commands:
 
   do_all:
     steps:
+      - run: apt update -y && apt upgrade -y
+      - run: apt install -y libudev-dev libusb-1.0-0-dev
       - conan
       - checkout
       - run: bash .circleci/deploy.sh
