@@ -7,7 +7,7 @@
  * \link   https://github.com/edwardstock
  */
 
-#include "minter/nanos_wallet.h"
+#include "minter/ledger/nanos_wallet.h"
 
 #include <boost/program_options.hpp>
 #include <exception>

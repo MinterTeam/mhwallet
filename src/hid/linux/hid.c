@@ -38,7 +38,7 @@
 #include <unistd.h>
 
 /* Linux */
-#include "minter/hid/hidapi.h"
+#include "minter/ledger/hid/hidapi.h"
 
 #include <libudev.h>
 #include <linux/hidraw.h>

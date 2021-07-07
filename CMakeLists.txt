@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(mhwallet
         LANGUAGES CXX C
-        VERSION 0.2.0
+        VERSION 0.3.0
         DESCRIPTION "Minter Ledger Wallet CLI and C++ library to communicate with wallet")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +29,7 @@ if (ENABLE_SHARED)
 	set(MINTER_EXPORT_SHARED 1)
 endif ()
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cfg/mhwallet_core.in.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/minter/mhwallet_core.h" NEWLINE_STYLE UNIX)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cfg/mhwallet_core.in.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/minter/ledger/mhwallet_core.h" NEWLINE_STYLE UNIX)
 
 include(ConanInit)
 conan_init()
@@ -39,7 +39,7 @@ add_conan_remote(minter https://minter.jfrog.io/artifactory/api/conan/conan)
 
 set(HID_SOURCES)
 set(HID_SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/src/hid)
-set(HID_HEADERS include/minter/hid/hidapi.h)
+set(HID_HEADERS include/minter/ledger/hid/hidapi.h)
 
 if (APPLE)
 	message(STATUS "hidapi: MacOS")
@@ -64,15 +64,15 @@ endif ()
 
 set(HEADERS
     ${HID_HEADERS}
-    include/minter/hidpp_device.h
-    include/minter/hidpp_base.h
-    include/minter/hidpp_device_info.h
-    include/minter/hidpp.h
-    include/minter/frame_io.h
-    include/minter/frame_io_apdu.h
-    include/minter/nanos_wallet.h
-    include/minter/errors.h
-    )
+    include/minter/ledger/hidpp_device.h
+    include/minter/ledger/hidpp_base.h
+    include/minter/ledger/hidpp_device_info.h
+    include/minter/ledger/hidpp.h
+    include/minter/ledger/frame_io.h
+    include/minter/ledger/frame_io_apdu.h
+    include/minter/ledger/nanos_wallet.h
+    include/minter/ledger/errors.h
+    include/minter/ledger/utils.h)
 
 set(SOURCES
     ${HEADERS}
@@ -83,7 +83,7 @@ set(SOURCES
     src/frame_io.cpp
     src/frame_io_apdu.cpp
     src/nanos_wallet.cpp
-    )
+    src/utils.cpp)
 
 # Main LIB
 if (ENABLE_SHARED)
@@ -106,7 +106,7 @@ target_link_libraries(${PROJECT_NAME} CONAN_PKG::minter_tx)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::toolbox)
 
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/minter/hid)
+target_include_directories(${PROJECT_NAME} PUBLIC include/minter/ledger/hid)
 
 if (UNIX AND NOT APPLE)
 	include(FindPkgConfig)

@@ -6,19 +6,19 @@
  * \author Eduard Maximovich (edward.vstock@gmail.com)
  * \link   https://github.com/edwardstock
  */
+#include "minter/ledger/nanos_wallet.h"
 
-#include "minter/nanos_wallet.h"
-
-#include "minter/errors.h"
+#include "minter/ledger/errors.h"
+#include "minter/ledger/mhwallet_core.h"
 
 #include <chrono>
 #include <stdexcept>
 #include <thread>
 
 minter::nanos_wallet::nanos_wallet()
-    : m_hid(),
-      m_framer(hidpp_device(LEDGER_VID, NANOS_PID)),
-      m_valid(false) {
+    : m_hid()
+    , m_framer(hidpp_device(LEDGER_VID, NANOS_PID))
+    , m_valid(false) {
 }
 
 minter::nanos_wallet::~nanos_wallet() {
@@ -194,7 +194,7 @@ bool minter::nanos_wallet::init_root() {
     return m_valid;
 }
 
-tb::bytes_data minter::nanos_wallet::exchange(const minter::APDU& apdu, uint16_t* resCode) {
+tb::bytes_data minter::nanos_wallet::exchange(const minter::APDU& apdu, uint16_t* res_code) {
     std::lock_guard<std::mutex> lock(m_devLock);
     if (!m_valid) {
         throw std::runtime_error("trying to send data to uninitialized device");
@@ -204,14 +204,14 @@ tb::bytes_data minter::nanos_wallet::exchange(const minter::APDU& apdu, uint16_t
     bool success = false;
 
     // sometimes, ledger nano s is shitting to our input part of IO with strange data
-    // do exchange until we dont receive valid result
+    // do exchange until we don't receive valid result
     do {
         try {
             if (!m_framer.io().get()) {
                 m_valid = false;
                 break;
             }
-            out = m_framer.exchange(apdu, resCode);
+            out = m_framer.exchange(apdu, res_code);
             success = true;
         } catch (const std::out_of_range& e) {
             ML_ERR("Invalid response length: {0}", e.what());
@@ -226,7 +226,7 @@ tb::bytes_data minter::nanos_wallet::exchange(const minter::APDU& apdu, uint16_t
     return out;
 }
 
-minter::address_t minter::nanos_wallet::get_address(uint32_t deriveIndex, bool silent) {
+minter::address_t minter::nanos_wallet::get_address(uint32_t derive_index, bool silent) {
     minter::APDU data = {
         DEVICE_CLASS,
         CMD_GET_ADDRESS,
@@ -236,23 +236,24 @@ minter::address_t minter::nanos_wallet::get_address(uint32_t deriveIndex, bool s
         {0, 0, 0, 0}};
 
     std::vector<uint8_t> tmp(4);
-    tb::num_to_bytes<uint32_t>(deriveIndex, tmp);
+    tb::num_to_bytes<uint32_t>(derive_index, tmp);
     memmove(data.payload, tmp.data(), 4);
     tmp.clear();
 
     uint16_t status = CODE_SUCCESS;
     auto response = exchange(data, &status);
     if (status != CODE_SUCCESS) {
-        ML_ERR("Unable to get address: {0}", statusToString(status));
+        ML_ERR("Unable to get address: {0}", minter::utils::ledger_status_to_string(status));
+        throw exchange_error(fmt::format("Unable to get address: {0}", minter::utils::ledger_status_to_string(status)), status);
     }
 
     return minter::address_t(response.take_range(0, 20));
 }
 
-minter::signature minter::nanos_wallet::sign_tx(tb::bytes_data txHash, uint32_t deriveIndex) {
+minter::signature minter::nanos_wallet::sign_tx(const tb::bytes_data& raw_tx, uint32_t derive_index) {
     tb::bytes_data unsignedHash(36);
-    unsignedHash.write(0, (uint32_t) deriveIndex);
-    unsignedHash.write(4, txHash);
+    unsignedHash.write(0, (uint32_t) derive_index);
+    unsignedHash.write(4, raw_tx);
     minter::APDU data = {
         DEVICE_CLASS,
         CMD_SIGN_TX,
@@ -267,9 +268,10 @@ minter::signature minter::nanos_wallet::sign_tx(tb::bytes_data txHash, uint32_t 
 
     uint16_t status = CODE_SUCCESS;
     auto response = exchange(data, &status);
+
     if (status != CODE_SUCCESS) {
-        ML_ERR("Unable to sign transaction: {0}", statusToString(status));
-        throw std::runtime_error(fmt::format("Unable to sign transaction: {0}", statusToString(status)));
+        ML_ERR("Unable to sign transaction: {0}", minter::utils::ledger_status_to_string(status));
+        throw exchange_error(fmt::format("Unable to sign transaction: {0}", minter::utils::ledger_status_to_string(status)), status);
     }
 
     out.r = response.take_first(32);
@@ -292,7 +294,7 @@ std::string minter::nanos_wallet::get_app_version() {
     uint16_t status = CODE_SUCCESS;
     auto response = exchange(data, &status);
     if (status != CODE_SUCCESS) {
-        throw std::runtime_error(fmt::format("Unable to get app version: {0}", statusToString(status)));
+        throw exchange_error(fmt::format("Unable to get app version: {0}", minter::utils::ledger_status_to_string(status)), status);
     }
 
     std::stringstream ss;
@@ -319,7 +321,7 @@ std::vector<minter::app_item> minter::nanos_wallet::get_app_list() {
     uint16_t status = CODE_SUCCESS;
     auto response = exchange(data, &status);
     if (status != CODE_SUCCESS) {
-        throw std::runtime_error(fmt::format("Unable to get app version: {0}", statusToString(status)));
+        throw exchange_error(fmt::format("Unable to get app version: {0}", minter::utils::ledger_status_to_string(status)), status);
     }
     if (response.empty()) {
         return {};
@@ -366,7 +368,7 @@ uint16_t minter::nanos_wallet::run_app(const std::string& name) {
     uint16_t status = CODE_SUCCESS;
     auto response = exchange(data, &status);
     if (status != CODE_SUCCESS) {
-        throw std::runtime_error(fmt::format("Unable to run app {0}: {1}", name, statusToString(status)));
+        throw exchange_error(fmt::format("Unable to run app {0}: {1}", name, minter::utils::ledger_status_to_string(status)), status);
     }
 
     bool found = false;

@@ -27,12 +27,6 @@
 namespace tb = toolbox::data;
 using namespace toolbox::data::literals;
 
-// Status codes
-const uint16_t CODE_SUCCESS = 0x9000;
-const uint16_t CODE_USER_REJECTED = 0x6985;
-const uint16_t CODE_INVALID_PARAM = 0x6b01;
-constexpr const uint16_t CODE_NO_STATUS_RESULT = CODE_SUCCESS + 1;
-
 volatile static bool HIDPP_VERBOSE = true;
 
 static void ml_log_s(const std::string& msg, std::ostream* os = &std::cout) {

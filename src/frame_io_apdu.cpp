@@ -7,8 +7,7 @@
  * \link   https://github.com/edwardstock
  */
 
-
-#include "minter/frame_io_apdu.h"
+#include "minter/ledger/frame_io_apdu.h"
 
 minter::frame_io_apdu::frame_io_apdu(const minter::hidpp_device &dev) :
     frame_io(dev),

@@ -15,7 +15,7 @@
 #include <cuchar>
 #endif
 
-#include "minter/hidpp_device.h"
+#include "minter/ledger/hidpp_device.h"
 
 #include <locale>
 

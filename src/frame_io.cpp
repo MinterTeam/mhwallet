@@ -7,9 +7,9 @@
  * \link   https://github.com/edwardstock
  */
 
-#include "minter/frame_io.h"
+#include "minter/ledger/frame_io.h"
 
-#include "minter/errors.h"
+#include "minter/ledger/errors.h"
 
 #include <toolbox/data/literals.h>
 #include <utility>

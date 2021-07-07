@@ -7,7 +7,7 @@
  * \link   https://github.com/edwardstock
  */
 
-#include "minter/hidpp_device_info.h"
+#include "minter/ledger/hidpp_device_info.h"
 
 minter::hidpp_device_info::hidpp_device_info(hid_device_info *ptr) : m_info(dev_info_t(ptr)) { }
 

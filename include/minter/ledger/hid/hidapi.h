@@ -27,8 +27,9 @@
 #ifndef HIDAPI_H__
 #define HIDAPI_H__
 
+#include "minter/ledger/mhwallet_core.h"
+
 #include <wchar.h>
-#include "minter/mhwallet_core.h"
 
 #ifdef _WIN32
 #define HID_API_EXPORT MINTER_MH_API

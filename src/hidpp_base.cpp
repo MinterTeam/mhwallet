@@ -1,21 +1,23 @@
-//
-// Created by edward on 13.11.2019.
-//
+/*!
+ * mhwallet.
+ * hidpp_base.cpp
+ *
+ * \date 2019
+ * \author Eduard Maximovich (edward.vstock@gmail.com)
+ * \link   https://github.com/edwardstock
+ */
 
-#include "minter/hidpp_base.h"
+#include "minter/ledger/hidpp_base.h"
 
-#include "minter/hidpp.h"
-#include "minter/hidpp_device_info.h"
+#include "minter/ledger/hidpp.h"
+#include "minter/ledger/hidpp_device_info.h"
 
-#include <iostream>
 #include <thread>
 
 minter::hidpp::hidpp() {
-    std::cout << "HidDev: init in thread " << std::this_thread::get_id() << std::endl;
     hid_init();
 }
 minter::hidpp::~hidpp() {
-    std::cout << "HidDev: destruct in thread " << std::this_thread::get_id() << std::endl;
     hid_exit();
 }
 

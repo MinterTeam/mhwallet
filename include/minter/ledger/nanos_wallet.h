@@ -12,20 +12,12 @@
 #include "frame_io_apdu.h"
 #include "hidpp_base.h"
 #include "hidpp_device.h"
+#include "mhwallet_core.h"
 
 #include <memory>
 #include <minter/address.h>
 #include <minter/tx/signature.h>
 #include <mutex>
-
-#define DEVICE_CLASS 0xe0
-
-// Vendor/Product id
-#define LEDGER_VID 0x2c97
-#define NANOS_PID_ROOT 0x1011
-#define NANOS_PID 0x0001
-#define NANOS_PID_16_APP 0x1005
-#define NANOX_PID 0x0004
 
 // Commands
 const uint8_t CMD_GET_VERSION = 0x01u;
@@ -33,21 +25,6 @@ constexpr const uint8_t CMD_GET_ADDRESS = 0x01u << 1u;
 constexpr const uint8_t CMD_SIGN_TX = 0x01u << 2u;
 
 namespace minter {
-
-static std::string statusToString(uint16_t status) {
-    switch (status) {
-    case CODE_SUCCESS:
-        return "success";
-    case CODE_NO_STATUS_RESULT:
-        return "no_status_result";
-    case CODE_INVALID_PARAM:
-        return "invalid_parameter";
-    case CODE_USER_REJECTED:
-        return "user_rejected";
-    default:
-        return "unknown_error";
-    }
-}
 
 enum MINTER_MH_API dev_connection_type {
     DISCONNECTED,
@@ -85,10 +62,10 @@ public:
     bool init(uint16_t product_id = NANOS_PID_16_APP);
     bool init_root();
 
-    tb::bytes_data exchange(const minter::APDU& apdu, uint16_t* resCode = nullptr);
+    tb::bytes_data exchange(const minter::APDU& apdu, uint16_t* res_code = nullptr);
 
-    minter::address_t get_address(uint32_t deriveIndex = 0, bool silent = false);
-    minter::signature sign_tx(tb::bytes_data txHash, uint32_t deriveIndex = 0);
+    minter::address_t get_address(uint32_t derive_index = 0, bool silent = false);
+    minter::signature sign_tx(const tb::bytes_data& raw_tx, uint32_t derive_index = 0);
     std::string get_app_version();
 
     // system
